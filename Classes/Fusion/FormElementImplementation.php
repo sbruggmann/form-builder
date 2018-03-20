@@ -19,28 +19,30 @@ class FormElementImplementation extends AbstractFusionObject
     {
         $context = $this->runtime->getCurrentContext();
         // TODO error handling if "parentRenderable" is not available
-        /** @var Page $renderable */
-        $renderable = $context['parentRenderable'];
+        if (array_key_exists('parentRenderable', $context)) {
+            /** @var Page $renderable */
+            $renderable = $context['parentRenderable'];
 
-        /** @var AbstractFormElement $element */
-        $element = $renderable->createElement($this->getIdentifier(), $this->getFormElementType());
-        $element->setLabel($this->getLabel());
-        $element->setDefaultValue($this->getDefaultValue());
+            /** @var AbstractFormElement $element */
+            $element = $renderable->createElement($this->getIdentifier(), $this->getFormElementType());
+            $element->setLabel($this->getLabel());
+            $element->setDefaultValue($this->getDefaultValue());
 
-        foreach ($this->getProperties() as $propertyName => $propertyValue) {
-            $element->setProperty($propertyName, $propertyValue);
+            foreach ($this->getProperties() as $propertyName => $propertyValue) {
+                $element->setProperty($propertyName, $propertyValue);
+            }
+            foreach ($this->getRenderingOptions() as $optionName => $optionValue) {
+                $element->setRenderingOption($optionName, $optionValue);
+            }
+
+            if ($this->isRequired()) {
+                $element->addValidator(new NotEmptyValidator());
+            }
+
+            $this->runtime->pushContext('element', $element);
+            $this->runtime->evaluate($this->path . '/validators');
+            $this->runtime->popContext();
         }
-        foreach ($this->getRenderingOptions() as $optionName => $optionValue) {
-            $element->setRenderingOption($optionName, $optionValue);
-        }
-
-        if ($this->isRequired()) {
-            $element->addValidator(new NotEmptyValidator());
-        }
-
-        $this->runtime->pushContext('element', $element);
-        $this->runtime->evaluate($this->path . '/validators');
-        $this->runtime->popContext();
     }
 
     private function getFormElementType(): string
